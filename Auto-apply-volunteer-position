@@ -1,0 +1,127 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.edge.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+import datetime
+def main(a,b,c,url):
+    # 配置 Edge 选项
+    edge_options = Options()
+    edge_options.add_argument("--start-maximized")  # 最大化窗口
+    # edge_options.add_argument("--headless")  # 无头模式（可选）
+
+    # 初始化 WebDriver（自动从 PATH 环境变量查找驱动）
+    driver = webdriver.Edge(options=edge_options)
+
+    target_time = datetime.datetime.now().replace(
+        hour=a, minute=b, second=c, microsecond=0
+    )
+    now = datetime.datetime.now()
+    if target_time < now:
+        pass
+    else:
+    # 计算需要等待的秒数
+        wait_seconds = (target_time - datetime.datetime.now()).total_seconds()
+        print(f"程序将在 {target_time.strftime('%Y-%m-%d %H:%M:%S')} 执行，等待 {wait_seconds:.2f} 秒...")
+        time.sleep(wait_seconds+0.5)
+        print("开始执行问卷自动填写...")
+    # 时间到，执行主程序
+    
+
+    try:
+        # 打开问卷页面（替换为实际问卷链接）
+        driver.get(url)
+        
+        # 等待页面加载完成（等待至少一个表单字段出现）
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "field-label"))
+        )
+        
+        # 定义要填写的内容（注意：标签需与网页实际显示一致，包含可能的*符号）
+        form_data = {
+            "班级": "机自A2410",
+            "姓名": "侯一方",
+            "学号": "2024030295",
+            "联系方式": "17696234303",
+            # 选择题
+        }
+    
+        # 遍历要填写的内容
+        for label_text, value in form_data.items():
+            # 优化标签定位：使用更灵活的匹配方式（支持带*的必填项）
+            field_labels = driver.find_elements(
+                By.XPATH, 
+                f"//div[@class='field-label']//div[contains(text(), '{label_text}') and contains(text(), '*') or contains(text(), '{label_text}')]"
+            )
+            
+            if not field_labels:
+                print(f"未找到标签: {label_text}")
+                continue
+                
+            target_label = field_labels[0]
+            
+            # 定位父容器（优化层级查找）
+            field_container = target_label.find_element(
+                By.XPATH, 
+                "./ancestor::div[contains(@class, 'field') and contains(@class, 'ui-field-contain')]"
+            )
+            
+            # 判断元素类型并填写
+            try:
+                # 处理文本输入框
+                input_element = field_container.find_element(
+                    By.CSS_SELECTOR, 
+                    "div.ui-input-text input"
+                )
+                input_element.clear()
+                input_element.send_keys(value)
+                print(f"填写文本框 '{label_text}': {value}")
+            except:
+                pass
+                    
+        # 等待表单加载稳定
+        time.sleep(0.5)
+        
+        # 提交表单
+        try:
+                # 等待提交按钮可点击
+            submit_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "SubmitBtnGroup"))
+            )
+            submit_button = driver.find_element(By.ID, "SubmitBtnGroup")
+            while True:
+                if submit_button.is_displayed():
+                    submit_button.click()
+                    if "提交成功" in driver.page_source:
+                        print("提交成功确认")
+                        break
+                    else:
+                        time.sleep(0.5)
+            # 等待提交确认页面
+            time.sleep(10)
+            if "提交成功" in driver.page_source:
+                print("提交成功确认")
+            else:
+                print("未检测到提交成功提示，可能需要人工验证")
+                
+        except Exception as e:
+            print("提交失败")
+            print("请检查提交按钮定位方式")
+
+    except Exception as e:
+        print("发生错误")
+        # 截图保存错误状态
+    finally:
+        # 保持浏览器打开一段时间，方便查看结果（可删除此行）
+        input("按回车键退出...")
+        driver.quit()
+if __name__ == "__main__":
+    url_ = str(input("请输入目标的网页地址："))
+    url_main = f"{url_}"
+    time_= str(input("请输入时间（格式：HH:MM:SS）："))
+    a_, b_, c_ = map(int, time_.split(':'))
+    main(a_,b_,c_,url_main)
+
+#第一行输入问卷的网页地址，第二行输入志愿开放的时间
+#选择题要自己选一下（这部分不会 >.< ）
