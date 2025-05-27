@@ -1,2 +1,42 @@
-print("hello,world")
-  
+#计算平均值
+import math
+sort=[]
+while True:
+    a=float(input("输入你要处理的数据："))
+    sort.append(a)
+    if a==0:
+        print("数据为：",sort[:-1],"\n")
+        break
+average_num=sum(sort)/(len(sort)-1)
+print("平均值为：",average_num,"\n")
+#计算标准偏差
+
+s1=1/(len(sort)-2)
+s2=0
+for i in range(len(sort)-1):
+    s2+=(sort[i]-average_num)**2
+s=(s1*s2)**0.5
+print("标准偏差为：",s,"\n")
+
+#求3西格玛值区间
+print("其三西格玛区间为：（{0}，{1}）".format(average_num-3*s,average_num+3*s))
+
+#计算A类不确定度
+uA=(s/((len(sort)-1)**0.5))*1.14
+print("A类不确定度为：",uA,"\n")
+
+#计算B类不确定度
+uB0=float(input("仪器的最大误差："))
+uB=uB0/(3**0.5)
+print("B类不确定度为：",uB,"\n")
+
+#计算总不确定度
+u=2*((uA**2+uB**2)**0.5)
+print("以95%置信的总不确定度为：",u,"\n")
+
+#计算相对误差
+E0=u/(2*average_num)
+E=100*E0
+print("相对误差为：",E,"%")
+
+#输入数据后回车，然后输入0结束数据输入（B类不确定度要自己输入）
